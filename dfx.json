@@ -1,0 +1,17 @@
+{
+    "canisters": {
+      "file_nft": {
+        "main": "src/main.mo",
+        "type": "motoko",
+        "candid": "src/main.did"
+      }
+    },
+    "defaults": {
+      "build": {
+        "args": "",
+        "packtool": ""
+      }
+    },
+    "version": 1,
+    "dfx": "0.15.0"
+  }
