@@ -1,0 +1,33 @@
+// アセット情報の定義
+type Asset = record {
+    // ファイルタイプ（例：image/jpeg）
+    contentType : text;
+    // ファイルデータのチャンク配列
+    chunks : vec blob;
+};
+
+type TokenId = nat;  // トークンID
+type ChunkId = nat;  // チャンクID
+
+service : {
+    // アセット情報の取得
+    getAsset : (TokenId) -> (opt Asset) query;
+    
+    // ファイルチャンクの取得
+    getChunk : (TokenId, ChunkId) -> (opt blob) query;
+    
+    // メタデータの取得
+    getMetadata : (TokenId) -> (opt text) query;
+    
+    // 所有者の取得
+    getOwner : (TokenId) -> (opt principal) query;
+    
+    // 基本NFTの作成
+    mint : (text) -> (TokenId);
+    
+    // ファイル付きNFTの作成
+    mintWithAsset : (text, text) -> (TokenId);
+    
+    // ファイルチャンクのアップロード
+    uploadChunk : (blob) -> (ChunkId);
+};
