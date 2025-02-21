@@ -1,150 +1,129 @@
-# File NFT Canister
+# Large File NFT System
 
-このプロジェクトは、Internet Computer上でファイルをアップロードしNFT化できるcanisterを実装したものです。ファイルを分割アップロードし、NFTとして管理することができます。
+大容量ファイル（最大10GB）をNFT化できるInternet Computer上のcanisterシステムです。
+BIMデータなどの大規模ファイルを効率的に管理し、NFTとして扱うことができます。
 
 ## デプロイ済みCanister
 
 - Canister ID: ``
-- 環境: MOTOKO Playground
+- 環境: Motoko Playground
 
-## キャニスターの動作説明
+## 技術仕様
 
-このキャニスターは以下の主要なコンポーネントで構成されています：
+### ストレージ制限
+- 最大ファイルサイズ: 10GB
+- 最大チャンクサイズ: 2MB
+- アップロードセッション有効期間: 24時間
 
-1. **ストレージ管理**
-   - NFTデータの保存
-   - アップロードされたファイルのチャンク管理
-   - 所有者情報の追跡
+### サポートされているストレージタイプ
+- Internet Computer (IC)
+- IPFS (計画中)
+- Arweave (計画中)
 
-2. **メイン機能**
-   - NFTの作成と管理
-   - ファイルの分割アップロード
-   - データの取得と検証
+## システムアーキテクチャ
 
-### 内部動作フロー
+### コアコンポーネント
+1. **セッション管理**
+   - アップロードセッションの作成と管理
+   - チャンク単位でのアップロード処理
+   - セッション有効期限の管理
 
-1. **ファイルアップロード時**:
-   ```
-   [ファイル] → [チャンク分割] → [uploadChunk関数] → [一時保存] → [mintWithAsset関数] → [NFT作成]
-   ```
+2. **ストレージ管理**
+   - チャンクベースのストレージ
+   - 分散ストレージ対応
+   - データ整合性の検証
 
-2. **NFT作成時**:
-   ```
-   [メタデータ] → [mint関数] → [所有者登録] → [NFTデータ保存] → [TokenID返却]
-   ```
+3. **NFT管理**
+   - メタデータ管理
+   - 所有権管理
+   - アセット参照管理
 
-3. **データ取得時**:
-   ```
-   [TokenID] → [getXXX関数] → [データ検証] → [結果返却]
-   ```
+## API仕様
 
-## Playground での動作確認手順
+### アップロードセッション開始
+```motoko
+startUploadSession(
+    expectedSize : Nat,    // 合計ファイルサイズ
+    chunksCount : Nat,     // 予定チャンク数
+    mimeType : Text        // ファイルタイプ
+) : async Result<Nat, Text>
+```
 
-### 1. NFTの基本作成（ファイルなし）
+### チャンクアップロード
+```motoko
+uploadChunk(
+    sessionId : Nat,    // セッションID
+    chunk : Blob,       // チャンクデータ
+    index : Nat         // チャンク順序
+) : async Result<ChunkId, Text>
+```
 
-![NFT作成手順]
+### NFT情報取得
+```motoko
+getNFT(tokenId : TokenId) : async ?NFT
+```
 
-1. Candid UIにアクセス
-   - `mint`関数を選択
-   - メタデータを入力（例: "My First NFT"）
-   - [Call]ボタンをクリック
-   - 返却されたTokenIDを記録
+## 実装詳細
 
-### 2. ファイル付きNFTの作成
+### データ構造
+- NFTMetadata: NFTの基本情報
+- AssetReference: ファイル参照情報
+- ChunkInfo: チャンク管理情報
+- UploadSession: アップロード進行状況管理
 
-![ファイルアップロード手順]
+### セキュリティ機能
+- セッション所有者の検証
+- チャンクサイズの制限
+- アップロード期限の管理
 
-1. ファイルのアップロード
-   ```
-   uploadChunk関数:
-   - 入力: バイナリデータ (vec nat8)
-   - 出力: チャンクID (nat)
-   ```
+## 使用方法
 
-2. NFTの作成
-   ```
-   mintWithAsset関数:
-   - 入力1: メタデータ (text)
-   - 入力2: コンテンツタイプ (text)
-   - 出力: TokenID (nat)
-   ```
+### 1. ファイルアップロード
+1. アップロードセッションの開始
+```bash
+dfx canister call large_file_nft startUploadSession '(1024000, 10, "image/jpeg")'
+```
 
-### 3. NFT情報の確認
+2. チャンクのアップロード
+```bash
+dfx canister call large_file_nft uploadChunk '(0, vec {1;2;3}, 0)'
+```
 
-![情報確認手順]
+### 2. NFT情報の取得
+```bash
+dfx canister call large_file_nft getNFT '(0)'
+```
 
-1. 所有者の確認
-   ```
-   getOwner関数:
-   - 入力: TokenID
-   - 出力: Principal ID
-   ```
+## エラーハンドリング
 
-2. メタデータの確認
-   ```
-   getMetadata関数:
-   - 入力: TokenID
-   - 出力: メタデータ情報
-   ```
+主なエラーケースと対処方法：
 
-3. アセット情報の確認
-   ```
-   getAsset関数:
-   - 入力: TokenID
-   - 出力: {contentType, chunks}
-   ```
+1. **セッション関連**
+- "Session not found": セッションIDの確認
+- "Session expired": 新しいセッションの開始
+- "Unauthorized": 認証情報の確認
 
-## エラー対処方法
-
-1. **アップロード失敗時**
-   - チャンクサイズが2MB以下であることを確認
-   - 一度に1チャンクずつアップロード
-
-2. **NFT作成エラー**
-   - Principal IDが正しいことを確認
-   - メタデータが空でないことを確認
-
-3. **データ取得エラー**
-   - TokenIDの存在確認
-   - クエリ呼び出しの制限確認
-
-## 制限事項とベストプラクティス
-
-1. **アップロード制限**
-   - 最大チャンクサイズ: 2MB
-   - 推奨チャンク数: 50以下/NFT
-
-2. **実行制限**
-   - クエリ呼び出し: 即時実行
-   - アップデート呼び出し: 数秒の遅延
-
-3. **ストレージ制限**
-   - キャニスターサイズ制限に注意
-   - 大きなファイルは分割推奨
+2. **アップロード関連**
+- "Chunk size exceeded": チャンクサイズの調整
+- "File size exceeds limit": ファイルサイズの確認
 
 ## 開発環境のセットアップ
 
 ```bash
 # リポジトリのクローン
-git clone [リポジトリURL]
-cd file_nft
+git clone [repository-url]
+cd large-file-nft
 
-# 依存関係のインストール
-npm install
-
-# ローカル実行
+# プロジェクトの初期化
 dfx start --clean --background
 dfx deploy
 ```
 
 ## ライセンス
-
 MIT License
 
-## 貢献ガイドライン
-
-1. Issue作成
-2. ブランチ作成
-3. 変更実装
-4. テスト実行
-5. プルリクエスト作成
+## 今後の予定
+- IPFS統合の実装
+- Arweave統合の実装
+- バッチアップロード機能の追加
+- プログレスバーの実装
