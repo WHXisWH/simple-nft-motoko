@@ -5,7 +5,7 @@ BIMデータなどの大規模ファイルを効率的に管理し、NFTとし�
 
 ## デプロイ済みCanister
 
-- Canister ID: ``
+- Canister ID: `4y4bj-oaaaa-aaaab-qac4q-cai`
 - 環境: Motoko Playground
 
 ## 技術仕様
