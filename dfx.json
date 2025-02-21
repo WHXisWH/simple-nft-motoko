@@ -1,17 +1,23 @@
 {
     "canisters": {
-      "file_nft": {
-        "main": "src/main.mo",
-        "type": "motoko",
-        "candid": "src/main.did"
-      }
+        "large_file_nft": {
+            "main": "src/main.mo",
+            "type": "motoko",
+            "candid": "src/main.did"
+        }
     },
     "defaults": {
-      "build": {
-        "args": "",
-        "packtool": ""
-      }
+        "build": {
+            "args": "",
+            "packtool": ""
+        }
+    },
+    "networks": {
+        "local": {
+            "bind": "127.0.0.1:8000",
+            "type": "ephemeral"
+        }
     },
     "version": 1,
     "dfx": "0.15.0"
-  }
+}
