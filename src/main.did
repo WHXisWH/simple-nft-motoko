@@ -1,33 +1,59 @@
-// アセット情報の定義
-type Asset = record {
-    // ファイルタイプ（例：image/jpeg）
-    contentType : text;
-    // ファイルデータのチャンク配列
-    chunks : vec blob;
+// NFTのメタデータ
+type NFTMetadata = record {
+    name : text;
+    description : text;
+    category : text;
+    created : int;
+    tags : vec text;
 };
 
-type TokenId = nat;  // トークンID
-type ChunkId = nat;  // チャンクID
+// ストレージタイプ
+type StorageType = variant {
+    IC;
+    IPFS;
+    Arweave;
+};
+
+// アセット参照情報
+type AssetReference = record {
+    storageType : StorageType;
+    location : text;
+    size : nat;
+    checksum : text;
+    mimeType : text;
+    contentHash : text;
+};
+
+// チャンク情報
+type ChunkInfo = record {
+    index : nat;
+    size : nat;
+    checksum : text;
+    storage : AssetReference;
+    previousChunkHash : opt text;
+};
+
+// NFT本体
+type NFT = record {
+    owner : principal;
+    metadata : NFTMetadata;
+    asset : AssetReference;
+    chunks : vec ChunkInfo;
+};
+
+// 戻り値型
+type UploadResult = variant {
+    ok : nat;
+    err : text;
+};
 
 service : {
-    // アセット情報の取得
-    getAsset : (TokenId) -> (opt Asset) query;
+    // アップロードセッション開始
+    startUploadSession : (nat, nat, text) -> (UploadResult);
     
-    // ファイルチャンクの取得
-    getChunk : (TokenId, ChunkId) -> (opt blob) query;
+    // チャンクアップロード
+    uploadChunk : (nat, vec nat8, nat) -> (UploadResult);
     
-    // メタデータの取得
-    getMetadata : (TokenId) -> (opt text) query;
-    
-    // 所有者の取得
-    getOwner : (TokenId) -> (opt principal) query;
-    
-    // 基本NFTの作成
-    mint : (text) -> (TokenId);
-    
-    // ファイル付きNFTの作成
-    mintWithAsset : (text, text) -> (TokenId);
-    
-    // ファイルチャンクのアップロード
-    uploadChunk : (blob) -> (ChunkId);
-};
+    // NFT情報取得
+    getNFT : (nat) -> (opt NFT) query;
+}
